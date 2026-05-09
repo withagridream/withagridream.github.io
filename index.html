@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ja" data-lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>withagridream — 農業とITをつなぐ</title>
+  <meta name="description" content="家庭菜園から農業まで。オープンソースの作物データベース vegbook。Claude Code MCP対応。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-dark:  #1b4332;
+      --green-mid:   #2d6a4f;
+      --green-light: #52b788;
+      --green-pale:  #d8f3dc;
+      --cream:       #f8faf6;
+      --text:        #1a1a1a;
+      --text-muted:  #555;
+      --border:      #d0e8d8;
+      --radius:      12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Noto Sans JP', 'Inter', system-ui, sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    /* ---- NAV ---- */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(248,250,246,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+
+    .nav-logo {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--green-dark);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+    }
+
+    .nav-logo span {
+      color: var(--green-light);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .lang-toggle {
+      display: flex;
+      background: var(--green-pale);
+      border-radius: 20px;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .lang-toggle button {
+      border: none;
+      background: transparent;
+      padding: 4px 14px;
+      border-radius: 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--green-mid);
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .lang-toggle button.active {
+      background: var(--green-mid);
+      color: #fff;
+    }
+
+    /* ---- HERO ---- */
+    .hero {
+      background: linear-gradient(160deg, var(--green-dark) 0%, var(--green-mid) 60%, var(--green-light) 100%);
+      color: #fff;
+      padding: 100px 2rem 90px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 20px;
+      padding: 5px 16px;
+      font-size: 0.82rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 1.2rem;
+      letter-spacing: -0.01em;
+    }
+
+    .hero h1 .product {
+      color: #b7e4c7;
+    }
+
+    .hero p {
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      opacity: 0.88;
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      background: #fff;
+      color: var(--green-dark);
+      font-weight: 700;
+      padding: 14px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
+
+    .btn-outline {
+      background: transparent;
+      color: #fff;
+      font-weight: 600;
+      padding: 14px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 1rem;
+      border: 1.5px solid rgba(255,255,255,0.6);
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-outline:hover { background: rgba(255,255,255,0.12); border-color: #fff; }
+
+    /* ---- STATS BAND ---- */
+    .stats-band {
+      background: #fff;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+      gap: clamp(2rem, 6vw, 5rem);
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--green-mid);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ---- SECTION ---- */
+    section {
+      padding: 80px 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--green-light);
+      margin-bottom: 0.6rem;
+    }
+
+    h2 {
+      font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+      font-weight: 700;
+      color: var(--green-dark);
+      margin-bottom: 1rem;
+      line-height: 1.3;
+    }
+
+    .section-lead {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 620px;
+      margin-bottom: 3rem;
+    }
+
+    /* ---- FEATURE CARDS ---- */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(45,106,79,0.1); }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      line-height: 1;
+    }
+
+    .card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--green-dark);
+      margin-bottom: 0.6rem;
+    }
+
+    .card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    .card-tag {
+      display: inline-block;
+      margin-top: 1rem;
+      background: var(--green-pale);
+      color: var(--green-mid);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    /* ---- HOW TO USE ---- */
+    .how-section {
+      background: var(--green-dark);
+      color: #fff;
+      padding: 80px 2rem;
+    }
+
+    .how-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .how-section .section-label { color: var(--green-light); }
+    .how-section h2 { color: #fff; }
+    .how-section .section-lead { color: rgba(255,255,255,0.7); }
+
+    .how-tabs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2.5rem;
+    }
+
+    .how-tab {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: var(--radius);
+      padding: 2rem;
+    }
+
+    .how-tab h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: #b7e4c7;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .how-tab pre {
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      color: #d8f3dc;
+      font-family: 'Courier New', monospace;
+    }
+
+    .how-tab p {
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.75);
+      margin-bottom: 1rem;
+      line-height: 1.65;
+    }
+
+    /* ---- ABOUT ---- */
+    .about-section {
+      background: #fff;
+      padding: 80px 2rem;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .about-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    @media (max-width: 700px) {
+      .about-inner { grid-template-columns: 1fr; gap: 2rem; }
+    }
+
+    .about-visual {
+      text-align: center;
+      color: var(--green-mid);
+      filter: drop-shadow(0 4px 12px rgba(45,106,79,0.15));
+    }
+
+    .about-visual svg {
+      width: 120px;
+      height: 120px;
+    }
+
+    .about-text h2 { margin-bottom: 1rem; }
+
+    .about-text p {
+      font-size: 0.97rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.8;
+    }
+
+    /* ---- LINKS ---- */
+    .links-section {
+      padding: 70px 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .links-grid {
+      display: flex;
+      justify-content: center;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      margin-top: 2.5rem;
+    }
+
+    .link-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 1.5rem 2.5rem;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: var(--green-dark);
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      min-width: 150px;
+    }
+
+    .link-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(45,106,79,0.1);
+      border-color: var(--green-light);
+    }
+
+    .link-card-icon { font-size: 1.8rem; }
+    .link-card-sub { font-size: 0.78rem; color: var(--text-muted); font-weight: 400; }
+
+    /* ---- FOOTER ---- */
+    footer {
+      background: var(--green-dark);
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      padding: 2.5rem 2rem;
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--green-light);
+      text-decoration: none;
+    }
+
+    footer a:hover { text-decoration: underline; }
+
+    /* ---- LANG SWITCH ---- */
+    [data-lang="ja"] .en { display: none; }
+    [data-lang="en"] .ja { display: none; }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 600px) {
+      .hero { padding: 70px 1.5rem 60px; }
+      .stats-band { gap: 1.5rem; }
+      .cards { grid-template-columns: 1fr; }
+      .how-tabs { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav>
+  <a href="#" class="nav-logo">with<span>agri</span>dream</a>
+  <div class="nav-right">
+    <div class="lang-toggle">
+      <button id="btn-ja" class="active" onclick="setLang('ja')">JA</button>
+      <button id="btn-en" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="hero-badge ja">Open Source · Claude Code MCP 対応</div>
+  <div class="hero-badge en">Open Source · Claude Code MCP Ready</div>
+
+  <h1 class="ja">農業とITをつなぐ<br>作物データベース <span class="product">vegbook</span></h1>
+  <h1 class="en">Bridging Agriculture<br>and Technology with <span class="product">vegbook</span></h1>
+
+  <p class="ja">家庭菜園から農業まで。コンパニオンプランツ・気候データ・収穫統計を、会話するだけで引き出せます。</p>
+  <p class="en">From balcony gardens to commercial farms. Companion planting, climate data, harvest stats — all accessible through natural conversation.</p>
+
+  <div class="hero-buttons">
+    <a href="https://github.com/withagridream/vegbook" target="_blank" rel="noopener" class="btn-primary ja">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+      GitHub で見る
+    </a>
+    <a href="https://github.com/withagridream/vegbook" target="_blank" rel="noopener" class="btn-primary en">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+      View on GitHub
+    </a>
+    <a href="https://note.com/with_agri_dream" target="_blank" rel="noopener" class="btn-outline ja">note で読む</a>
+    <a href="https://note.com/with_agri_dream" target="_blank" rel="noopener" class="btn-outline en">Read on note</a>
+  </div>
+</div>
+
+<!-- ===== STATS ===== -->
+<div class="stats-band">
+  <div class="stat-item">
+    <div class="stat-number">100</div>
+    <div class="stat-label ja">作物品種</div>
+    <div class="stat-label en">Crop varieties</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">161</div>
+    <div class="stat-label ja">コンパニオンプランツ</div>
+    <div class="stat-label en">Companion plant pairs</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">52</div>
+    <div class="stat-label ja">農業用語</div>
+    <div class="stat-label en">Glossary terms</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-number">10</div>
+    <div class="stat-label ja">MCP ツール</div>
+    <div class="stat-label en">MCP tools</div>
+  </div>
+</div>
+
+<!-- ===== FEATURES ===== -->
+<section id="features">
+  <div class="section-label ja">できること</div>
+  <div class="section-label en">What you can do</div>
+
+  <h2 class="ja">農業の知識を、必要なときに手元へ</h2>
+  <h2 class="en">Agricultural knowledge, when and how you need it</h2>
+
+  <p class="section-lead ja">vegbook は Claude Code と連携する MCP サーバーとして動作します。自然な会話で、作物の育て方から収穫統計まで引き出せます。</p>
+  <p class="section-lead en">vegbook runs as a Claude Code MCP server. Use natural language to access growing guides, companion planting data, climate records, and national harvest statistics.</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon">
+        <svg width="40" height="40" viewBox="0 0 48 48" fill="none" stroke="var(--green-mid)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="24" y1="42" x2="24" y2="20"/>
+          <path d="M24 30C24 22 33 17 38 20C36 28 27 31 24 30Z"/>
+          <path d="M24 30C24 22 15 17 10 20C12 28 21 31 24 30Z"/>
+        </svg>
+      </div>
+      <h3 class="ja">今月何を植える？</h3>
+      <h3 class="en">What to plant this month?</h3>
+      <p class="ja">季節・難易度・栽培環境（ベランダ・プランター・ほ場）で絞り込み。初心者にも農家にも使いやすい設計。</p>
+      <p class="en">Filter by season, difficulty, and growing environment (balcony, planter, field). Designed for beginners and farmers alike.</p>
+      <span class="card-tag">vegbook_recommend · vegbook_search</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">
+        <svg width="40" height="40" viewBox="0 0 48 48" fill="none" stroke="var(--green-mid)" stroke-width="2.5" stroke-linecap="round">
+          <circle cx="15" cy="15" r="7"/>
+          <circle cx="33" cy="33" r="7"/>
+          <line x1="20" y1="20" x2="28" y2="28"/>
+          <path d="M15 8C15 8 26 10 30 18"/>
+          <path d="M33 40C33 40 22 38 18 30"/>
+        </svg>
+      </div>
+      <h3 class="ja">コンパニオンプランツ</h3>
+      <h3 class="en">Companion planting</h3>
+      <p class="ja">相性の良い・悪い組み合わせと効果の理由を 161 件収録。連作障害対策にも。</p>
+      <p class="en">161 companion planting pairs with effect descriptions. Useful for crop rotation planning and pest management.</p>
+      <span class="card-tag">vegbook_companion</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">
+        <svg width="40" height="40" viewBox="0 0 48 48" fill="none" stroke="var(--green-mid)" stroke-width="2.5" stroke-linecap="round">
+          <path d="M26 28V14a2 2 0 0 0-4 0v14"/>
+          <circle cx="24" cy="34" r="6"/>
+          <line x1="28" y1="18" x2="33" y2="18"/>
+          <line x1="28" y1="23" x2="33" y2="23"/>
+          <line x1="28" y1="28" x2="31" y2="28"/>
+        </svg>
+      </div>
+      <h3 class="ja">気候データ × 収穫統計</h3>
+      <h3 class="en">Climate data × Harvest stats</h3>
+      <p class="ja">気象庁の地域別気候データと e-Stat の収穫量統計を内蔵。補助金申請や経営計画の参考に。</p>
+      <p class="en">Built-in JMA regional climate data and e-Stat national harvest statistics. Useful for business planning and subsidy applications.</p>
+      <span class="card-tag">vegbook_climate · vegbook_harvest_stats</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">
+        <svg width="40" height="40" viewBox="0 0 48 48" fill="none" stroke="var(--green-mid)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 10h12a4 4 0 0 1 4 4v22a4 4 0 0 0-4-4H10V10Z"/>
+          <path d="M38 10H26a4 4 0 0 0-4 4v22a4 4 0 0 1 4-4h12V10Z"/>
+          <line x1="14" y1="18" x2="22" y2="18"/>
+          <line x1="14" y1="23" x2="22" y2="23"/>
+        </svg>
+      </div>
+      <h3 class="ja">農業用語集</h3>
+      <h3 class="en">Agricultural glossary</h3>
+      <p class="ja">「連作障害」「うどんこ病」「間引き」など 52 語を平易な言葉で解説。日英対応。</p>
+      <p class="en">52 agricultural terms explained in plain language. Available in both Japanese and English.</p>
+      <span class="card-tag">vegbook_glossary</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">
+        <svg width="40" height="40" viewBox="0 0 48 48" fill="none" stroke="var(--green-mid)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="24" cy="24" r="5"/>
+          <path d="M24 10v4M24 34v4M10 24h4M34 24h4"/>
+          <path d="M14.9 14.9l2.8 2.8M30.3 30.3l2.8 2.8M14.9 33.1l2.8-2.8M30.3 17.7l2.8-2.8"/>
+        </svg>
+      </div>
+      <h3 class="ja">データの追加・更新</h3>
+      <h3 class="en">Add and update data</h3>
+      <p class="ja">コンパニオンプランツの追加・作物フィールドの更新が Claude Code から直接できます。</p>
+      <p class="en">Add companion plant entries and update crop fields directly from Claude Code chat.</p>
+      <span class="card-tag">vegbook_add_companion · vegbook_update_crop</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">
+        <svg width="40" height="40" viewBox="0 0 48 48" fill="none" stroke="var(--green-mid)" stroke-width="2.5" stroke-linecap="round">
+          <ellipse cx="24" cy="13" rx="13" ry="5"/>
+          <path d="M11 13v8c0 2.76 5.82 5 13 5s13-2.24 13-5v-8"/>
+          <path d="M11 21v8c0 2.76 5.82 5 13 5s13-2.24 13-5v-8"/>
+        </svg>
+      </div>
+      <h3 class="ja">SQLite で自由に使える</h3>
+      <h3 class="en">Direct SQLite access</h3>
+      <p class="ja">vegbook.db は標準 SQLite3 ファイル。Python・Node.js・任意の言語からクエリを投げられます。</p>
+      <p class="en">vegbook.db is a standard SQLite3 file. Query it directly from Python, Node.js, or any language you prefer.</p>
+      <span class="card-tag">Open Data · MIT License</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== HOW TO USE ===== -->
+<div class="how-section">
+  <div class="how-inner">
+    <div class="section-label ja">使い方</div>
+    <div class="section-label en">Getting started</div>
+
+    <h2 class="ja">MCP でも CLI でも</h2>
+    <h2 class="en">MCP or CLI — your choice</h2>
+
+    <p class="section-lead ja">Claude Code に組み込んで会話で使う方法と、ターミナルから直接使う方法の2通りに対応しています。</p>
+    <p class="section-lead en">Use it as a Claude Code MCP server for natural language access, or run it from the terminal as a CLI tool.</p>
+
+    <div class="how-tabs">
+      <div class="how-tab">
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          <span class="ja">MCP（Claude Code 連携）</span>
+          <span class="en">MCP (Claude Code)</span>
+        </h3>
+        <p class="ja">クローンして仮想環境を作成し、.mcp.json に設定を追加するだけで動作します。</p>
+        <p class="en">Clone the repo, create a virtual environment, and add the config to .mcp.json.</p>
+        <pre>git clone https://github.com/withagridream/vegbook.git
+cd vegbook
+python3 -m venv .venv
+source .venv/bin/activate
+pip install mcp</pre>
+        <p class="ja" style="margin-top:1rem;">設定後は Claude Code のチャットに話しかけるだけ。</p>
+        <p class="en" style="margin-top:1rem;">Then just ask Claude Code in natural language.</p>
+        <pre class="ja">今月ベランダで育てられる
+初心者向けの野菜を教えて</pre>
+        <pre class="en">What beginner-friendly vegetables
+can I grow on a balcony this month?</pre>
+      </div>
+
+      <div class="how-tab">
+        <h3>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          <span class="ja">CLI（ターミナル）</span>
+          <span class="en">CLI (Terminal)</span>
+        </h3>
+        <p class="ja">Python 標準ライブラリのみ。追加インストール不要で即使えます。</p>
+        <p class="en">Python standard library only. No extra packages needed.</p>
+        <pre># <span class="ja">今月のおすすめ</span><span class="en">Recommendations</span>
+python vegbook.py recommend
+
+# <span class="ja">トマトの詳細</span><span class="en">Crop details</span>
+python vegbook.py detail <span class="ja">トマト</span><span class="en">Tomato</span> --lang en
+
+# <span class="ja">コンパニオンプランツ</span><span class="en">Companion plants</span>
+python vegbook.py companion <span class="ja">ナス</span><span class="en">Eggplant</span> --lang en
+
+# <span class="ja">用語検索</span><span class="en">Glossary lookup</span>
+python vegbook.py glossary --term <span class="ja">連作</span><span class="en">mildew</span></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ABOUT ===== -->
+<div class="about-section">
+  <div class="about-inner">
+    <div class="about-visual">
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="24" y1="44" x2="24" y2="8"/>
+        <path d="M24 32C24 23 33 18 38 21C36 30 27 33 24 32Z"/>
+        <path d="M24 32C24 23 15 18 10 21C12 30 21 33 24 32Z"/>
+        <path d="M24 22C24 13 33 8 38 11C36 20 27 23 24 22Z"/>
+        <path d="M24 22C24 13 15 8 10 11C12 20 21 23 24 22Z"/>
+      </svg>
+    </div>
+    <div class="about-text">
+      <div class="section-label ja">withagridream について</div>
+      <div class="section-label en">About withagridream</div>
+
+      <h2 class="ja">農民になれないITおじさんが<br>作っています</h2>
+      <h2 class="en">Built by an IT engineer<br>who can't stop dreaming of farming</h2>
+
+      <p class="ja">エンジニア歴30年。システム設計からDB構築まで経験してきたバックエンド屋が、農業・家庭菜園の世界に飛び込みました。</p>
+      <p class="en">30 years in software engineering. A backend developer with experience in system design and database architecture who jumped headfirst into the world of agriculture and home gardening.</p>
+
+      <p class="ja">農業の経験はゼロです。だからこそ、初心者目線で「こういうデータがあったら便利」を愚直に作り続けています。</p>
+      <p class="en">Zero farming experience. That's exactly why this project exists — building the tools I wished I had when I started, from a beginner's perspective.</p>
+
+      <p class="ja">農業 × IT で、育てる喜びをもっと多くの人に届けたい。それが withagridream の出発点です。</p>
+      <p class="en">Agriculture × technology — bringing the joy of growing things to more people. That's what withagridream is about.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LINKS ===== -->
+<section class="links-section">
+  <div class="section-label ja">リンク</div>
+  <div class="section-label en">Links</div>
+
+  <h2 class="ja">つながりましょう</h2>
+  <h2 class="en">Let's connect</h2>
+
+  <div class="links-grid">
+    <a href="https://github.com/withagridream/vegbook" target="_blank" rel="noopener" class="link-card">
+      <span class="link-card-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="#1b4332"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+      </span>
+      GitHub
+      <span class="link-card-sub">withagridream/vegbook</span>
+    </a>
+    <a href="https://note.com/with_agri_dream" target="_blank" rel="noopener" class="link-card">
+      <span class="link-card-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1b4332" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/>
+          <path d="M14 2v6h6"/>
+          <line x1="8" y1="13" x2="16" y2="13"/>
+          <line x1="8" y1="17" x2="13" y2="17"/>
+        </svg>
+      </span>
+      note
+      <span class="link-card-sub">with_agri_dream</span>
+    </a>
+    <a href="https://x.com/with_agri_dream" target="_blank" rel="noopener" class="link-card">
+      <span class="link-card-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="#1b4332"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.745l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </span>
+      X (Twitter)
+      <span class="link-card-sub">@with_agri_dream</span>
+    </a>
+    <a href="mailto:withagridream@gmail.com" class="link-card">
+      <span class="link-card-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1b4332" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2"/>
+          <path d="m2 7 10 7 10-7"/>
+        </svg>
+      </span>
+      <span class="ja">メール</span>
+      <span class="en">Email</span>
+      <span class="link-card-sub">withagridream@gmail.com</span>
+    </a>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <p class="ja">© 2026 withagridream — データ出典：農研機構・農林水産省・Wikipedia (CC BY-SA) ／ コード：<a href="https://github.com/withagridream/vegbook/blob/main/LICENSE">MIT License</a></p>
+  <p class="en">© 2026 withagridream — Data: NARO, MAFF, Wikipedia (CC BY-SA) / Code: <a href="https://github.com/withagridream/vegbook/blob/main/LICENSE">MIT License</a></p>
+</footer>
+
+<script>
+  function setLang(lang) {
+    document.documentElement.setAttribute('data-lang', lang);
+    document.getElementById('btn-ja').classList.toggle('active', lang === 'ja');
+    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+    document.documentElement.lang = lang === 'ja' ? 'ja' : 'en';
+  }
+
+  // ブラウザの言語設定に合わせて初期言語を設定
+  const browserLang = navigator.language || navigator.userLanguage || 'ja';
+  if (!browserLang.startsWith('ja')) setLang('en');
+</script>
+</body>
+</html>
